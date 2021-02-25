@@ -1,23 +1,44 @@
-import logo from './logo.svg';
 import './App.css';
+import axios from 'axios'
+import { useState, useEffect } from 'react'
+import { Credentials } from './Credentials'
+import Datatable from './datatable'
 
 function App() {
+
+  const [token, setToken] = useState('');
+  const [albums, setAlbums] = useState([]);
+
+  const spotify = Credentials()
+  useEffect(() => {
+
+    axios('https://accounts.spotify.com/api/token', {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(spotify.ClientID + ':' + spotify.ClientSecret)
+      },
+      data: 'grant_type=client_credentials',
+      method: 'POST'
+    })
+      .then(tokenResponse => {
+        console.log(tokenResponse.data.access_token);
+        setToken(tokenResponse.data.access_token)
+        axios('	https://api.spotify.com/v1/artists/22bE4uQ6baNwSHPVcDxLCe/albums', {
+          method: 'GET',
+          headers: { 'Authorization': 'Bearer ' + tokenResponse.data.access_token }
+        }).then(response => {
+          const albumarray = []
+          for (var v in response.data.items) albumarray.push(response.data.items[v])
+          setAlbums(albumarray)
+          console.log(albums)
+        })
+      })
+
+  }, [])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Datatable data={albums}></Datatable>
     </div>
   );
 }
